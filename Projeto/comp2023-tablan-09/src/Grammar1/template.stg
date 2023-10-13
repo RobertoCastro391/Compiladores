@@ -1,0 +1,170 @@
+// Value mappings
+booleanValue ::= [
+    "true":"true",
+    "false":"false",
+    default:"null"
+]
+
+typeValue ::= [
+    "integer":"int",
+    "text":"String",
+    "real":"Double",
+    "ATable":"ATable",
+    default:"Null"
+]
+
+//Main program template
+program(name, define_table, instruction) ::= <<
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.*;
+import Grammar2.TableGeral;
+
+public class <name> {
+    <define_table; separator="\n">
+    public static void main(String[] args) throws FileNotFoundException, IOException  {
+        
+        <"ArrayList<Object> info = new ArrayList<>();"; separator="\n">
+
+        <instruction; separator="\n">
+    }
+}
+>>
+
+declare_variable(ID, element_type) ::= <<
+<typeValue.(element_type)> <var_name(ID)>;
+>>
+
+define_table(table_type, var, element_type, element_name, varName, tableName) ::= <<
+public static class <table_type> extends TableGeral {
+    
+    <"private static LinkedHashMap<String, ArrayList<String>\> header = new LinkedHashMap<>();"; separator="\n">
+    
+    public <table_type>(){
+        super(getheader());
+    }
+
+    public static <"LinkedHashMap<String, ArrayList<String>\> getheader() {">
+        
+        <if(tableName)><"ArrayList<String>"> col0 = new ArrayList\<\>();<endif>
+        <varName: { varName | <"ArrayList<String>"> <varName> = new ArrayList\<\>();}; separator="\n"> 
+        
+        <if(tableName)>col0.add(<tableName>);<endif>
+        <var, element_type, element_name, varName: { var,element_type,element_name,varName | <(varName)>.add("<typeValue.(element_type)>"); <if(element_name)><"\n"><var, element_type: { var,element_type | <(varName)>.add(<(element_name)>);}; separator="\n"><endif>}; separator="\n">
+
+        <if(tableName)>header.put(<tableName>,col0);<endif>
+        <var,varName: { var, varName | header.put("<var>",<varName>);}; separator="\n"> 
+        
+        return header;
+    }
+
+    public <table_type><"("><table_type><" t, String id) {">
+        <"super();">
+        <"addColumn(id, t.getColumnType(id), t.getColumnName(id));">
+        <"ArrayList<Object> column = t.getColumn(id);">
+        <"for(Object i : column){
+            addLine(id,i);
+}">
+    }
+
+    public <table_type><"(TableGeral t) {">
+        <"for(String i: t.getHeadername()){
+            addColumn(i, t.getColumnType(i), t.getColumnName(i));
+}">
+        <"for(int m=0; m < t.getColumn(t.getHeadername().get(0)).size(); m++){
+    for(String i: t.getHeadername()){
+        addLine(i, t.getColumn(i).get(m));
+    }
+}">
+    }
+
+    public static <table_type> readfile(String filename, ATable t, ArrayList<"<Integer>"> colunas){
+        <"TableGeral table = new TableGeral();">  
+        <"if(t==null){
+    table=ReadMain.Importfile(filename, t);
+}">
+        <"else{ 
+    for(int i : colunas){
+        String id;
+        id = t.getHeadername().get(i);
+        table.addColumn(id, t.getColumnType(id), t.getColumnName(id));
+    }
+    table=ReadMain.Importfile(filename, table);
+}
+ATable tabelf = new ATable(table);
+return tabelf;">
+    }
+}
+
+>>
+
+table_type(ID, table_name)::= <<
+<ID>.setName_table(<table_name>);
+>>
+
+table_name(type, element_name) ::= <<
+    <type><element_name>
+>>
+
+column(ID, ID2) ::= <<
+<ID>.addColumnName("<ID2>")
+>>
+
+
+element_type(type) ::= <<
+<type>
+>>
+
+element_name(type) ::= <<
+"<type>"
+>>
+
+print(print_expr) ::= <<
+<print_expr>.printLineByLine(<print_expr>);
+>>
+
+print_expr(expr) ::= <<
+<expr>
+>>
+
+literal(n) ::= <<
+<n>
+>>
+
+var_name(name) ::= <<
+<name>
+>>
+
+assignment(ID, expr, table_type, column, element_name, vector) ::= <<
+<if(table_type)><(table_type)>
+<elseif(column)><column>,<element_name>);
+<elseif(vector)><vector>;
+<else><ID> = <expr>;<endif>
+>>
+
+new_table(table_type,column, ID1, ID2)::= <<
+<if(ID1)>new <table_type>(<ID1>,"<ID2>")<else>new <table_type>()<endif>
+>>
+
+SubSum(ID1, ID2)::= <<
+<ID1>+<ID2>
+>>
+
+vector(expr1, expr2, ID)::= <<
+info.add(<expr1>);
+info.add(<expr2>);
+<ID>.add(info);
+info.clear()
+>>
+
+read(filename, using) ::= <<
+<if(using)>readfile("<filename>", <using>)<else>readfile("<filename>", null, null)<endif>
+>>
+
+using(selection) ::= <<
+<selection>; separator="\n">
+>>
+
+selection(expr, ID) ::= <<
+colunas.add(<expr>, "<ID>");
+>>
